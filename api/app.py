@@ -1,21 +1,20 @@
 import logging
 import time
-import threading
-import requests
 from flask import Flask, render_template, jsonify, request
 from collections import deque
 import math
 import os
+import requests
+import platform
 
 # Configure logging
 logging.basicConfig(
-    filename='trade_simulator.log',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
 # Initialize Flask
-app = Flask(__name__, template_folder='templates', static_folder='static')
+app = Flask(__name__, template_folder='templates')
 
 # Global variables
 orderbook = {'bids': [], 'asks': []}
@@ -41,47 +40,46 @@ latencies = deque(maxlen=1000)
 # Fetch orderbook
 def fetch_orderbook():
     url = 'https://www.okx.com/api/v5/market/books?instId=BTC-USDT-SWAP&sz=20'
-    while True:
-        start_time = time.time()
-        try:
-            response = requests.get(url, timeout=5)
-            response.raise_for_status()
-            data = response.json()['data'][0]
-            bids = []
-            asks = []
-            for entry in data.get('bids', []):
-                if len(entry) >= 2:
-                    bids.append([float(entry[0]), float(entry[1])])
-                else:
-                    logging.warning(f"Invalid bid entry: {entry}")
-            for entry in data.get('asks', []):
-                if len(entry) >= 2:
-                    asks.append([float(entry[0]), float(entry[1])])
-                else:
-                    logging.warning(f"Invalid ask entry: {entry}")
-            orderbook['bids'] = bids
-            orderbook['asks'] = asks
-            logging.info(f"Fetched orderbook: {len(bids)} bids, {len(asks)} asks")
-            compute_simulation()
-            latency = (time.time() - start_time) * 1000
-            latencies.append(latency)
-            simulation_results['latency'] = latency
-            logging.info(f"Processed orderbook fetch, latency: {latency:.2f}ms")
-        except Exception as e:
-            logging.error(f"Error fetching orderbook: {e}")
-            orderbook['bids'] = []
-            orderbook['asks'] = []
-            simulation_results.update({
-                'slippage': 0.0,
-                'fees': 0.0,
-                'market_impact': 0.0,
-                'net_cost': 0.0,
-                'maker_taker': 0.0,
-                'latency': 0.0,
-                'warning': 'Failed to fetch orderbook'
-            })
-        time.sleep(10)
+    start_time = time.time()
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()['data'][0]
+        bids = []
+        asks = []
+        for entry in data.get('bids', []):
+            if len(entry) >= 2:
+                bids.append([float(entry[0]), float(entry[1])])
+            else:
+                logging.warning(f"Invalid bid entry: {entry}")
+        for entry in data.get('asks', []):
+            if len(entry) >= 2:
+                asks.append([float(entry[0]), float(entry[1])])
+            else:
+                logging.warning(f"Invalid ask entry: {entry}")
+        orderbook['bids'] = bids
+        orderbook['asks'] = asks
+        logging.info(f"Fetched orderbook: {len(bids)} bids, {len(asks)} asks")
+        latency = (time.time() - start_time) * 1000
+        latencies.append(latency)
+        simulation_results['latency'] = latency
+        return True
+    except Exception as e:
+        logging.error(f"Error fetching orderbook: {e}")
+        orderbook['bids'] = []
+        orderbook['asks'] = []
+        simulation_results.update({
+            'slippage': 0.0,
+            'fees': 0.0,
+            'market_impact': 0.0,
+            'net_cost': 0.0,
+            'maker_taker': 0.0,
+            'latency': 0.0,
+            'warning': 'Failed to fetch orderbook'
+        })
+        return False
 
+# Compute simulation
 def compute_simulation():
     global simulation_results
     simulation_results['warning'] = ''
@@ -93,12 +91,10 @@ def compute_simulation():
     bids = orderbook['bids']
     asks = orderbook['asks']
 
-    # Always compute fees and other metrics
     fees = calculate_fees()
     market_impact = calculate_market_impact(bids, asks)
     maker_taker = calculate_maker_taker(bids, asks)
 
-    # Compute slippage, handle errors
     slippage = calculate_slippage(bids, asks)
     if slippage == float('inf'):
         simulation_results['warning'] = 'Order quantity exceeds available liquidity'
@@ -201,16 +197,20 @@ def calculate_maker_taker(bids, asks):
 @app.route('/')
 def index():
     try:
-        template_path = os.path.join(app.root_path, app.template_folder, 'index.html')
-        logging.info(f"Attempting to render index.html at {template_path}")
+        fetch_orderbook()
+        compute_simulation()
+        logging.info("Rendering index.html")
         return render_template('index.html')
     except Exception as e:
         logging.error(f"Error rendering index: {e}")
-        return "Internal Server Error", 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/results')
 def get_results():
     try:
+        if not orderbook['bids'] or not orderbook['asks']:
+            fetch_orderbook()
+            compute_simulation()
         logging.info("Serving /api/results")
         return jsonify(simulation_results)
     except Exception as e:
@@ -228,16 +228,41 @@ def update_params():
             'volatility': float(data.get('volatility', input_params['volatility'])),
             'fee_tier': data.get('fee_tier', input_params['fee_tier'])
         })
-        compute_simulation()  # Recompute immediately after param update
+        fetch_orderbook()
+        compute_simulation()
+        logging.info("Updated params and recomputed simulation")
         return jsonify({'status': 'success'})
     except Exception as e:
         logging.error(f"Error in update_params: {e}")
         return jsonify({'error': str(e)}), 500
 
-# Start background task
-def start_background_task():
-    threading.Thread(target=fetch_orderbook, daemon=True).start()
+# Vercel serverless entry point
+application = app
 
 if __name__ == '__main__':
-    start_background_task()
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    if platform.system() != 'Windows' and os.environ.get('VERCEL'):
+        # Use gunicorn for Vercel (Linux)
+        import gunicorn.app.base
+
+        class StandaloneApplication(gunicorn.app.base.BaseApplication):
+            def __init__(self, app, options=None):
+                self.options = options or {}
+                self.application = app
+                super().__init__()
+
+            def load_config(self):
+                for key, value in self.options.items():
+                    self.cfg.set(key.lower(), value)
+
+            def load(self):
+                return self.application
+
+        options = {
+            'bind': f"0.0.0.0:{os.environ.get('PORT', 5000)}",
+            'workers': 1,
+            'timeout': 30
+        }
+        StandaloneApplication(app, options).run()
+    else:
+        # Use Flask development server for local (Windows or non-Vercel)
+        app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

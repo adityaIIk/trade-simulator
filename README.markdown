@@ -1,4 +1,4 @@
-# Trade Simulator 📈
+![image](https://github.com/user-attachments/assets/328bcbc0-a731-4938-bd9d-c0151ae4d5ef)# Trade Simulator 📈
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.0.3-black?logo=flask)
@@ -7,7 +7,7 @@
 
 Welcome to **Trade Simulator**, a sleek Flask-based web application that simulates trading costs for market orders on the OKX exchange, specifically for the BTC-USDT-SWAP pair. Fetch real-time orderbook data, compute slippage, fees, and market impact, and visualize results in a responsive UI—all hosted serverlessly on Vercel!
 
-🌐 **Live Demo**: [trade-simulator-xyz.vercel.app](https://trade-simulator-xyz.vercel.app)  
+🌐 **Live Demo**: [https://trade-simulator-one.vercel.app/](https://trade-simulator-one.vercel.app/)  
 📂 **GitHub**: [adityaIIk/trade-simulator](https://github.com/adityaIIk/trade-simulator)
 
 ---
@@ -31,9 +31,8 @@ Welcome to **Trade Simulator**, a sleek Flask-based web application that simulat
 
 ## 📸 Screenshots
 
-| Input Panel | Output Panel |
-|-------------|--------------|
-| ![Input Panel](screenshots/input_panel.png) | ![Output Panel](screenshots/output_panel.png) |
+![Screenshot 2025-05-20 004909](https://github.com/user-attachments/assets/73664705-9ac0-443d-9806-f13ca28ec41b)
+
 
 *Note*: Add screenshots to a `screenshots/` folder in your repo for the above links to work.
 
@@ -168,16 +167,7 @@ Contributions are welcome! To contribute:
 
 ---
 
-## 📜 License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
 ## 👨‍💻 Author
 
 **Aditya**  
 - GitHub: [adityaIIk](https://github.com/adityaIIk)  
-- Email: (add your email if desired)
-
-⭐️ If you find this project useful, give it a star on GitHub! 🚀

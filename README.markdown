@@ -1,5 +1,4 @@
-![image](https://github.com/user-attachments/assets/328bcbc0-a731-4938-bd9d-c0151ae4d5ef)# Trade Simulator 📈
-
+# Trade Simulator 📈
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
 ![Flask](https://img.shields.io/badge/Flask-3.0.3-black?logo=flask)
 ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black?logo=vercel)

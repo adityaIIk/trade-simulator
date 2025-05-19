@@ -112,7 +112,7 @@ trade_simulator/
    - Click **Deploy**.
 
 3. **Access**:
-   Visit [trade-simulator-xyz.vercel.app](https://trade-simulator-xyz.vercel.app).
+   Visit [https://trade-simulator-one.vercel.app/](https://trade-simulator-one.vercel.app/).
 
 ---
 
@@ -120,7 +120,7 @@ trade_simulator/
 
 1. **Open the App**:
    - Local: [http://localhost:5000](http://localhost:5000)
-   - Vercel: [trade-simulator-xyz.vercel.app](https://trade-simulator-xyz.vercel.app)
+   - Vercel: [https://trade-simulator-one.vercel.app/](https://trade-simulator-one.vercel.app/)
 
 2. **Input Parameters**:
    - **Quantity**: Enter amount (default: 100 USD).
